@@ -1,0 +1,70 @@
+#!/bin/bash
+set -euo pipefail
+
+# -----------------------------
+# VARIABLES FROM TERRAFORM
+# -----------------------------
+CLUSTER_NAME="${cluster_name}"
+API_SERVER_ENDPOINT="${api_server_endpoint}"
+CERTIFICATE_AUTHORITY_B64="${certificate_authority_b64}"
+SERVICE_IPV4_CIDR="${service_ipv4_cidr}"
+
+# -----------------------------
+# 1. Wait for network & metadata
+# -----------------------------
+MAX_WAIT=300
+WAIT_INTERVAL=5
+ELAPSED=0
+
+echo "Waiting for network and instance metadata to become available..."
+until curl -s --max-time 2 http://169.254.169.254/latest/meta-data/ >/dev/null; do
+    sleep $WAIT_INTERVAL
+    ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+    if [ $ELAPSED -ge $MAX_WAIT ]; then
+        echo "Timeout waiting for metadata service. Exiting."
+        exit 1
+    fi
+done
+echo "Metadata service reachable."
+
+# -----------------------------
+# 2. Create NodeConfig file
+# -----------------------------
+NODE_CONFIG_FILE="/etc/eks/nodeconfig.yaml"
+mkdir -p $(dirname "$NODE_CONFIG_FILE")
+
+cat <<EOF > "$NODE_CONFIG_FILE"
+metadata:
+  clusterName: ${CLUSTER_NAME}
+  apiServerEndpoint: ${API_SERVER_ENDPOINT}
+  certificateAuthority: ${CERTIFICATE_AUTHORITY_B64}
+  serviceIpv4Cidr: ${SERVICE_IPV4_CIDR}
+EOF
+
+chmod 600 "$NODE_CONFIG_FILE"
+echo "NodeConfig written to $NODE_CONFIG_FILE"
+
+# -----------------------------
+# 3. Run nodeadm init with retries
+# -----------------------------
+RETRIES=5
+SLEEP_BETWEEN=10
+
+for i in $(seq 1 $RETRIES); do
+    echo "Running nodeadm init (attempt $i/$RETRIES)..."
+    if sudo nodeadm init; then
+        echo "nodeadm init succeeded"
+        break
+    else
+        echo "nodeadm init failed, retrying in $SLEEP_BETWEEN seconds..."
+        sleep $SLEEP_BETWEEN
+    fi
+done
+
+# -----------------------------
+# 4. Ensure kubelet is running
+# -----------------------------
+echo "Ensuring kubelet service is active..."
+sudo systemctl enable kubelet
+sudo systemctl restart kubelet
+sudo systemctl status kubelet --no-pager

@@ -22,3 +22,10 @@ variable "azs" {
   description = "List of Availability Zones to use for subnet placement. Subnets will be evenly distributed across these AZs."
   type        = list(string)
 }
+
+variable "eks_version" {
+  type = string
+}
+
+variable "cni_version" {}
+variable "kube_proxy_version" {}

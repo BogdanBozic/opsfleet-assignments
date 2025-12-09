@@ -22,6 +22,7 @@ resource "aws_eip" "this" {
 
 resource "aws_nat_gateway" "this" {
   count         = var.subnet_count
+  depends_on = [aws_internet_gateway.this]
   allocation_id = aws_eip.this[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
 

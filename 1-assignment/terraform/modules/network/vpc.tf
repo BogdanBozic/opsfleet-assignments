@@ -1,11 +1,14 @@
 resource "aws_vpc" "this" {
   cidr_block       = var.vpc_cidr
   instance_tenancy = "default"
+  enable_dns_hostnames = true
+  enable_dns_support = true
 
   tags = merge(
     var.tags,
     {
       Name = "${var.project_name}-${var.env}"
+      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "shared"
     }
   )
 }
@@ -27,7 +30,9 @@ resource "aws_subnet" "public" {
     var.tags,
     {
       Name       = "${var.project_name}-${var.env}-public-${count.index}"
-      Visibility = "public"
+      Accessibility  = "public"
+      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"
+      "kubernetes.io/role/elb" = "1"
     }
   )
 }
@@ -49,7 +54,9 @@ resource "aws_subnet" "private" {
     var.tags,
     {
       Name       = "${var.project_name}-${var.env}-private-${count.index}"
-      Visibility = "private"
+      Accessibility  = "private"
+      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"
+      "kubernetes.io/role/internal-elb" = "1"
     }
   )
 }

@@ -3,3 +3,6 @@ project_name = "opsFleet"
 subnet_count = 3
 vpc_cidr = "10.100.0.0/16"
 azs = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
+eks_version = "1.34"
+cni_version = "v1.20.5-eksbuild.1"
+kube_proxy_version = "v1.34.0-eksbuild.2"

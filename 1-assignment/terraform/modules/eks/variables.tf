@@ -1,0 +1,10 @@
+variable "public_subnet_ids" {}
+variable "private_subnet_ids" {}
+variable "eks_version" {}
+variable "project_name" {}
+variable "env" {}
+variable "tags" {}
+variable "vpc_id" {}
+variable "vpc_cidr" {}
+variable "cni_version" {}
+variable "kube_proxy_version" {}
