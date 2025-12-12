@@ -57,6 +57,7 @@ resource "aws_subnet" "private" {
       Accessibility  = "private"
       "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"
       "kubernetes.io/role/internal-elb" = "1"
+      "karpenter.sh/discovery" = "${var.project_name}-${var.env}"
     }
   )
 }

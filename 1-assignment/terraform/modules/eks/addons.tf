@@ -1,14 +1,3 @@
-data "tls_certificate" "oidc_web_identity" {
-  url = aws_eks_cluster.this.identity[0].oidc[0].issuer
-}
-
-resource "aws_iam_openid_connect_provider" "oidc_provider_sts" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.oidc_web_identity.certificates[0].sha1_fingerprint]
-  url             = aws_eks_cluster.this.identity[0].oidc[0].issuer
-  tags            = var.tags
-}
-
 resource "aws_iam_role" "eks_vpc_cni_role" {
   assume_role_policy = data.aws_iam_policy_document.eks_vpc_cni_role.json
   name               = "${aws_eks_cluster.this.name}-vpc-cni-role"
@@ -71,5 +60,14 @@ resource "aws_eks_addon" "eks-cluster-kube-proxy" {
   addon_version               = var.kube_proxy_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+  tags                        = var.tags
+}
+
+resource "aws_eks_addon" "coredns" {
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = "coredns"
+  addon_version               = var.coredns_addon_version
+  resolve_conflicts_on_create = "NONE"
+  resolve_conflicts_on_update = "NONE"
   tags                        = var.tags
 }

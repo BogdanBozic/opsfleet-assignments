@@ -13,5 +13,8 @@ spec:
     apiServerEndpoint: ${api_server_endpoint}
     certificateAuthority: ${certificate_authority}
     cidr: ${service_ipv4_cidr}
+  preBootstrapCommands:
+    - swapoff -a
+    - sed -i.bak '/ swap / s/^/#/' /etc/fstab
 
 --BOUNDARY--

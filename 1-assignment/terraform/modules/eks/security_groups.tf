@@ -2,7 +2,10 @@ resource "aws_security_group" "private" {
   name        = "${var.project_name}-${var.env}-private"
   description = "SG for private resources of ${var.project_name}-${var.env} cluster"
   vpc_id      = var.vpc_id
-  tags        = var.tags
+  tags        = merge(
+    var.tags,
+    {"kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"}
+  )
 }
 
 resource "aws_security_group_rule" "private_allow_all_ingress" {

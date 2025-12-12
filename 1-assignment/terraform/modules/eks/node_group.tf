@@ -4,7 +4,11 @@ resource "aws_eks_node_group" "bootstrap" {
   node_role_arn   = aws_iam_role.bootstrap.arn
   subnet_ids      = var.private_subnet_ids
   release_version = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)
-  instance_types = ["t3.medium"]
+  instance_types = ["m5.large"]
+
+  labels = {
+    role = "bootstrap"
+  }
 
   scaling_config {
     desired_size = 1
@@ -22,6 +26,9 @@ resource "aws_eks_node_group" "bootstrap" {
   }
 
 
+  lifecycle {
+    ignore_changes = [ launch_template[0].version ]
+  }
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
@@ -40,7 +47,7 @@ resource "aws_launch_template" "eks_launch_template" {
   name = "${var.project_name}-${var.env}"
 
   block_device_mappings {
-    device_name = "/dev/sdf"
+    device_name = "/dev/xvda"
 
     ebs {
       encrypted   = false
@@ -103,4 +110,9 @@ resource "aws_iam_role_policy_attachment" "bootstrap-AmazonEC2ContainerRegistryR
 resource "aws_iam_role_policy_attachment" "bootstrap-AmazonSSMManagedInstanceCore" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.bootstrap.name
+}
+
+resource "aws_iam_instance_profile" "node_pod_execution_profile" {
+  name = "${var.project_name}-${var.env}-node-pod-execution"
+  role = aws_iam_role.bootstrap.name
 }
