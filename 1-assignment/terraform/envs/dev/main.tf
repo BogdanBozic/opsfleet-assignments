@@ -22,6 +22,7 @@ module "eks" {
   eks_version = var.eks_version
   kube_proxy_version = var.kube_proxy_version
   coredns_addon_version = var.coredns_version
+  nodes_ami_version = var.nodes_ami_version
   cni_version = var.cni_version
   vpc_id = module.network.vpc.id
   vpc_cidr = module.network.vpc.cidr
@@ -35,7 +36,7 @@ module "eks" {
 module "karpenter" {
   source = "../../modules/karpenter"
   depends_on = [module.eks, module.network]
-  ami_release = module.eks.ami_release
+  ami_release = "ami-0d04d3ac271ee650e"
   azs = var.azs
   cluster = module.eks.cluster
   karpenter_helm_version = "1.8.3"

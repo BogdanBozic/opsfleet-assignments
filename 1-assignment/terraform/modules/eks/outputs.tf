@@ -13,7 +13,3 @@ output "node_pod_execution_role" {
 output "node_pod_execution_profile" {
   value = aws_iam_instance_profile.node_pod_execution_profile
 }
-
-output "ami_release" {
-  value = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.version)
-}

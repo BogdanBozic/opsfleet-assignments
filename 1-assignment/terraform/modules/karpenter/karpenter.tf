@@ -64,7 +64,6 @@ resource "helm_release" "karpenter" {
 
 
 resource "kubernetes_manifest" "karpenter_nodepool" {
-
   depends_on = [helm_release.karpenter]
 
   computed_fields = ["spec.disruption", "spec.disruption.consolidatedAfter"]
@@ -100,8 +99,9 @@ resource "kubernetes_manifest" "karpenter_nodepool" {
             name  = "spot"
           }
           requirements = [
-            { key = "karpenter.k8s.aws/instance-family", operator = "In", values = ["t3", "t2", "m5", "c5"] },
-            { key = "karpenter.k8s.aws/instance-cpu", operator = "In", values = ["1", "2", "4", "8"] },
+            { key = "karpenter.k8s.aws/instance-family", operator = "In", values = ["m5", "c5"] },
+            { key = "karpenter.k8s.aws/instance-cpu", operator = "In", values = ["2", "4", "8"] },
+            { key = "karpenter.k8s.aws/instance-memory", operator = "Gt", values = ["1"] },
             { key = "topology.kubernetes.io/zone", operator = "In", values = var.azs },
             { key = "kubernetes.io/arch", operator = "In", values = ["amd64"] },
             { key = "karpenter.sh/capacity-type", operator = "In", values = ["spot"] },
@@ -113,9 +113,6 @@ resource "kubernetes_manifest" "karpenter_nodepool" {
   }
 }
 
-data "aws_ssm_parameter" "spot_ami_id" {
-  name = "/aws/service/eks/optimized-ami/${var.cluster.version}/amazon-linux-2023/x86_64/standard/recommended/image_id"
-}
 
 resource "kubernetes_manifest" "karpenter_ec2nodeclass" {
   depends_on = [helm_release.karpenter]
@@ -128,7 +125,7 @@ resource "kubernetes_manifest" "karpenter_ec2nodeclass" {
     }
     spec = {
       instanceProfile = var.node_pod_execution_profile.name
-      amiFamily       = "AL2023"
+      amiFamily       = "Bottlerocket"
       subnetSelectorTerms = [
         {
           tags = {
@@ -138,7 +135,7 @@ resource "kubernetes_manifest" "karpenter_ec2nodeclass" {
       ]
       amiSelectorTerms = [
         {
-          id = data.aws_ssm_parameter.spot_ami_id.value
+          id = var.ami_release
         }
       ]
       securityGroupSelectorTerms = [

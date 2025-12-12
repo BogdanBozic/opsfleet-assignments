@@ -9,3 +9,4 @@ variable "vpc_cidr" {}
 variable "cni_version" {}
 variable "kube_proxy_version" {}
 variable "coredns_addon_version" {}
+variable "nodes_ami_version" {}

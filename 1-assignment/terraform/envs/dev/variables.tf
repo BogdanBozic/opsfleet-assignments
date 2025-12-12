@@ -30,3 +30,4 @@ variable "eks_version" {
 variable "cni_version" {}
 variable "kube_proxy_version" {}
 variable "coredns_version" {}
+variable "nodes_ami_version" {}
