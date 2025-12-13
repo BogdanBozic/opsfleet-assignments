@@ -2,9 +2,9 @@ resource "aws_security_group" "private" {
   name        = "${var.project_name}-${var.env}-private"
   description = "SG for private resources of ${var.project_name}-${var.env} cluster"
   vpc_id      = var.vpc_id
-  tags        = merge(
+  tags = merge(
     var.tags,
-    {"kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"}
+    { "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned" }
   )
 }
 

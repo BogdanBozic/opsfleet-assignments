@@ -1,8 +1,13 @@
+##############
+### PUBLIC ###
+##############
+
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
 
   tags = merge(
-    var.tags,
+    try(var.tags.common, {}),
+    try(var.tags.route_tables, {}),
     {
       Name = "${var.project_name}-${var.env}-public"
     }
@@ -21,13 +26,17 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+###############
+### PRIVATE ###
+###############
 
 resource "aws_route_table" "private" {
   count  = var.subnet_count
   vpc_id = aws_vpc.this.id
 
   tags = merge(
-    var.tags,
+    try(var.tags.common, {}),
+    try(var.tags.route_tables, {}),
     {
       Name = "${var.project_name}-${var.env}-private-${count.index}"
     }

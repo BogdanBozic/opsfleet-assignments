@@ -1,20 +1,20 @@
 resource "aws_vpc" "this" {
-  cidr_block       = var.vpc_cidr
-  instance_tenancy = "default"
+  cidr_block           = var.vpc_cidr
+  instance_tenancy     = "default"
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 
   tags = merge(
-    var.tags,
+    try(var.tags.common, {}),
+    try(var.tags.vpc, {}),
     {
-      Name = "${var.project_name}-${var.env}"
-      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "shared"
+      Name                                                   = "${var.project_name}-${var.env}"
     }
   )
 }
 
 resource "aws_subnet" "public" {
-  count = var.subnet_count
+  count  = var.subnet_count
   vpc_id = aws_vpc.this.id
 
   cidr_block = cidrsubnet(
@@ -23,22 +23,21 @@ resource "aws_subnet" "public" {
     count.index * 2
   )
 
-  availability_zone = var.azs[count.index]
+  availability_zone       = var.azs[count.index]
   map_public_ip_on_launch = true
 
   tags = merge(
-    var.tags,
+    try(var.tags.common, {}),
+    try(var.tags.public_subnets, {}),
     {
-      Name       = "${var.project_name}-${var.env}-public-${count.index}"
-      Accessibility  = "public"
-      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"
-      "kubernetes.io/role/elb" = "1"
+      Name                                                   = "${var.project_name}-${var.env}-public-${count.index}"
+      Accessibility                                          = "public"
     }
   )
 }
 
 resource "aws_subnet" "private" {
-  count = var.subnet_count
+  count  = var.subnet_count
   vpc_id = aws_vpc.this.id
 
   cidr_block = cidrsubnet(
@@ -47,17 +46,15 @@ resource "aws_subnet" "private" {
     count.index * 2 + 1
   )
 
-  availability_zone = var.azs[count.index]
+  availability_zone       = var.azs[count.index]
   map_public_ip_on_launch = false
 
   tags = merge(
-    var.tags,
+    try(var.tags.common, {}),
+    try(var.tags.private_subnets, {}),
     {
-      Name       = "${var.project_name}-${var.env}-private-${count.index}"
-      Accessibility  = "private"
-      "kubernetes.io/cluster/${var.project_name}-${var.env}" = "owned"
-      "kubernetes.io/role/internal-elb" = "1"
-      "karpenter.sh/discovery" = "${var.project_name}-${var.env}"
+      Name                                                   = "${var.project_name}-${var.env}-private-${count.index}"
+      Accessibility                                          = "private"
     }
   )
 }

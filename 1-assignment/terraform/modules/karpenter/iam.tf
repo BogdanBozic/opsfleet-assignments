@@ -22,7 +22,6 @@ data "aws_iam_policy_document" "karpenter_role_policy" {
   }
 }
 
-
 data "aws_iam_policy_document" "karpenter_inline_policy" {
 
   statement {

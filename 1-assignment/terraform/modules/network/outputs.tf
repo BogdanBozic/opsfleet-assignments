@@ -21,6 +21,6 @@ output "subnets" {
 output "vpc" {
   value = {
     cidr = aws_vpc.this.cidr_block
-    id = aws_vpc.this.id
+    id   = aws_vpc.this.id
   }
 }

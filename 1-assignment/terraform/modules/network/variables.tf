@@ -14,8 +14,8 @@ variable "azs" {
 }
 
 variable "tags" {
-  description = "A map of tags to apply to all VPC, subnet, and gateway resources."
-  type        = map(string)
+  description = "Arbitrary map of tag sets applied to different resource categories."
+  type        = map(map(string))
   default     = {}
 }
 

@@ -11,30 +11,39 @@ terraform {
   }
 }
 
+provider "aws" {
+  default_tags {
+    tags = {
+      project     = var.project_name
+      environment = var.env
+    }
+  }
+}
+
 provider "helm" {
   kubernetes = {
     host                   = module.eks.cluster.endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority[0].data)
     exec = {
-    api_version = "client.authentication.k8s.io/v1"
-    command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster.name]
-    env = {
-       AWS_DEFAULT_OUTPUT = "json"
+      api_version = "client.authentication.k8s.io/v1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster.name]
+      env = {
+        AWS_DEFAULT_OUTPUT = "json"
+      }
     }
-  }
   }
 }
 
 provider "kubernetes" {
-   host                   = module.eks.cluster.endpoint
-   cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority[0].data)
-   exec {
+  host                   = module.eks.cluster.endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster.certificate_authority[0].data)
+  exec {
     api_version = "client.authentication.k8s.io/v1"
     command     = "aws"
     args        = ["eks", "get-token", "--cluster-name", module.eks.cluster.name]
     env = {
-       AWS_DEFAULT_OUTPUT = "json"
+      AWS_DEFAULT_OUTPUT = "json"
     }
   }
 }

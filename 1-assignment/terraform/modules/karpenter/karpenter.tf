@@ -3,20 +3,7 @@ resource "aws_sqs_queue" "karpenter_interruption_handler_sqs" {
   name                      = "eks-${var.cluster.name}-karpenter"
   tags                      = var.tags
 }
-
-
-resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter"
-  create_namespace = true
-  name             = "karpenter-crd"
-  repository       = "oci://public.ecr.aws/karpenter"
-  chart            = "karpenter-crd"
-  version          = var.karpenter_helm_version
-  wait             = true
-}
-
 resource "helm_release" "karpenter" {
-  depends_on = [helm_release.karpenter_crd]
 
   namespace        = "karpenter"
   create_namespace = true
@@ -36,24 +23,12 @@ resource "helm_release" "karpenter" {
       value = var.cluster.endpoint
     },
     {
-      name  = "settings.aws.defaultInstanceProfile"
-      value = var.node_pod_execution_profile.name
-    },
-    {
       name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
       value = aws_iam_role.karpenter_role.arn
     },
     {
-      name  = "serviceAccount.automountToken"
-      value = "true"
-    },
-    {
       name  = "settings.interruptionQueue"
       value = aws_sqs_queue.karpenter_interruption_handler_sqs.name
-    },
-    {
-      name  = "controller.nodeSelector.role"
-      value = "bootstrap"
     },
     {
       name  = "replicas"
@@ -62,17 +37,14 @@ resource "helm_release" "karpenter" {
   ]
 }
 
-
-resource "kubernetes_manifest" "karpenter_nodepool" {
+resource "kubernetes_manifest" "karpenter_nodepool_amd64" {
   depends_on = [helm_release.karpenter]
-
-  computed_fields = ["spec.disruption", "spec.disruption.consolidatedAfter"]
 
   manifest = {
     apiVersion = "karpenter.sh/v1"
     kind       = "NodePool"
     metadata = {
-      name = "spot"
+      name = "amd64"
     }
 
     spec = {
@@ -80,32 +52,30 @@ resource "kubernetes_manifest" "karpenter_nodepool" {
         consolidationPolicy = "WhenEmpty"
         consolidateAfter    = "1m"
       }
-      limits = {
-        cpu    = "80"
-        memory = "120Gi"
-      }
+
       template = {
         metadata = {
           labels = {
-            self-managed-node = "true"
-            node-type         = "spot"
-            role              = "spot"
+            arch = "amd64"
+            role = "workload"
           }
         }
+
         spec = {
+          taints = [
+            { key = "karpenter.sh/provisioned", value = "amd64", effect = "NoSchedule" }
+          ]
+
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
-            name  = "spot"
+            name  = "default"
           }
+
           requirements = [
-            { key = "karpenter.k8s.aws/instance-family", operator = "In", values = ["m5", "c5"] },
-            { key = "karpenter.k8s.aws/instance-cpu", operator = "In", values = ["2", "4", "8"] },
-            { key = "karpenter.k8s.aws/instance-memory", operator = "Gt", values = ["1"] },
-            { key = "topology.kubernetes.io/zone", operator = "In", values = var.azs },
             { key = "kubernetes.io/arch", operator = "In", values = ["amd64"] },
-            { key = "karpenter.sh/capacity-type", operator = "In", values = ["spot"] },
-            { key = "kubernetes.io/os", operator = "In", values = ["linux"] }
+            { key = "karpenter.sh/capacity-type", operator = "In", values = ["spot", "on-demand"] },
+            { key = "karpenter.k8s.aws/instance-family", operator = "In", values = ["m5", "c5"] }
           ]
         }
       }
@@ -113,6 +83,54 @@ resource "kubernetes_manifest" "karpenter_nodepool" {
   }
 }
 
+resource "kubernetes_manifest" "karpenter_nodepool_arm64" {
+  depends_on = [
+    helm_release.karpenter,
+    kubernetes_manifest.karpenter_ec2nodeclass
+  ]
+
+  manifest = {
+    apiVersion = "karpenter.sh/v1"
+    kind       = "NodePool"
+    metadata = {
+      name = "arm64"
+    }
+
+    spec = {
+      disruption = {
+        consolidationPolicy = "WhenEmpty"
+        consolidateAfter    = "1m"
+      }
+
+      template = {
+        metadata = {
+          labels = {
+            arch = "arm64"
+            role = "workload"
+          }
+        }
+
+        spec = {
+          taints = [
+            { key = "karpenter.sh/provisioned", value = "arm64", effect = "NoSchedule" }
+          ]
+
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "default"
+          }
+
+          requirements = [
+            { key = "kubernetes.io/arch", operator = "In", values = ["arm64"] },
+            { key = "karpenter.sh/capacity-type", operator = "In", values = ["spot", "on-demand"] },
+            { key = "karpenter.k8s.aws/instance-family", operator = "In", values = ["m6g", "c6g"] }
+          ]
+        }
+      }
+    }
+  }
+}
 
 resource "kubernetes_manifest" "karpenter_ec2nodeclass" {
   depends_on = [helm_release.karpenter]
@@ -121,35 +139,33 @@ resource "kubernetes_manifest" "karpenter_ec2nodeclass" {
     apiVersion = "karpenter.k8s.aws/v1"
     kind       = "EC2NodeClass"
     metadata = {
-      name = "spot"
+      name = "default"
     }
     spec = {
-      instanceProfile = var.node_pod_execution_profile.name
       amiFamily       = "Bottlerocket"
-      subnetSelectorTerms = [
-        {
-          tags = {
-            "karpenter.sh/discovery" = var.cluster.name
-          }
-        }
-      ]
-      amiSelectorTerms = [
-        {
-          id = var.ami_release
-        }
-      ]
-      securityGroupSelectorTerms = [
-        {
-          tags = {
-            "kubernetes.io/cluster/${var.cluster.name}" = "owned"
-          }
-        }
-      ]
-      tags = merge({
-        Name                     = "${var.cluster.name}-node"
+      instanceProfile = var.node_pod_execution_profile.name
+
+      tags = {
         "karpenter.sh/discovery" = var.cluster.name
-        role                     = "spot"
-      }, var.tags)
+      }
+
+      subnetSelectorTerms = [{
+        tags = {
+          "karpenter.sh/discovery" = var.cluster.name
+        }
+      }]
+
+      amiSelectorTerms = [
+        { id = var.arm_ami_id },
+        { id = var.amd_ami_id }
+      ]
+
+      securityGroupSelectorTerms = [{
+        tags = {
+          "kubernetes.io/cluster/${var.cluster.name}" = "owned"
+        }
+      }]
     }
   }
 }
+

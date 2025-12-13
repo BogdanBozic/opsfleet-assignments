@@ -1,3 +1,7 @@
+###############
+### CLUSTER ###
+###############
+
 resource "aws_iam_role" "cluster" {
   name = "${var.project_name}-${var.env}-cluster"
   assume_role_policy = jsonencode({
@@ -12,7 +16,7 @@ resource "aws_iam_role" "cluster" {
         Principal = {
           Service = "eks.amazonaws.com"
         }
-      },
+      }
     ]
   })
 }
@@ -22,22 +26,51 @@ resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
   role       = aws_iam_role.cluster.name
 }
 
-# resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSComputePolicy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSComputePolicy"
-#   role       = aws_iam_role.cluster.name
-# }
-#
-# resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSBlockStoragePolicy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSBlockStoragePolicy"
-#   role       = aws_iam_role.cluster.name
-# }
-#
-# resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSLoadBalancingPolicy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSLoadBalancingPolicy"
-#   role       = aws_iam_role.cluster.name
-# }
-#
-# resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSNetworkingPolicy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSNetworkingPolicy"
-#   role       = aws_iam_role.cluster.name
-# }
+resource "aws_iam_role_policy_attachment" "vpc_resource_controller" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+  role       = aws_iam_role.cluster.name
+}
+
+##################
+### NODE GROUP ###
+##################
+
+resource "aws_iam_role" "bootstrap" {
+  name = "${var.project_name}-${var.env}-bootstrap"
+
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+    Version = "2012-10-17"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bootstrap-AmazonEKSWorkerNodePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.bootstrap.name
+}
+
+resource "aws_iam_role_policy_attachment" "bootstrap-AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.bootstrap.name
+}
+
+resource "aws_iam_role_policy_attachment" "bootstrap-AmazonEC2ContainerRegistryReadOnly" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.bootstrap.name
+}
+
+resource "aws_iam_role_policy_attachment" "bootstrap-AmazonSSMManagedInstanceCore" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.bootstrap.name
+}
+
+resource "aws_iam_instance_profile" "node_pod_execution_profile" {
+  name = "${var.project_name}-${var.env}-node-pod-execution"
+  role = aws_iam_role.bootstrap.name
+}

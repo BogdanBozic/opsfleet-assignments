@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-amd
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-amd
+  template:
+    metadata:
+      labels:
+        app: nginx-amd
+    spec:
+      nodeSelector:
+        arch: amd64
+        role: workload
+      tolerations:
+        - key: "karpenter.sh/provisioned"
+          operator: "Equal"
+          value: "amd64"
+          effect: "NoSchedule"
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
