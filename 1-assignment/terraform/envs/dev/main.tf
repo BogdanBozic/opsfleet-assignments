@@ -7,7 +7,7 @@ module "network" {
   subnet_count = length(var.azs)
   azs          = var.azs
 
-  tags         = {
+  tags = {
     vpc = {
       "kubernetes.io/cluster/${var.project_name}-${var.env}" = "shared"
     }
@@ -44,21 +44,21 @@ module "eks" {
 module "crds" {
   source = "../../modules/crds"
 
-  depends_on = [module.eks]
+  depends_on             = [module.eks]
   karpenter_helm_version = var.karpenter_helm_version
 }
 
 module "karpenter" {
   source = "../../modules/karpenter"
 
-  depends_on = [module.eks, module.network, module.crds]
-  amd_ami_id = var.amd_ami_id
-  arm_ami_id = var.arm_ami_id
-  azs = var.azs
-  cluster = module.eks.cluster
-  karpenter_helm_version = var.karpenter_helm_version
+  depends_on                 = [module.eks, module.network, module.crds]
+  amd_ami_id                 = var.amd_ami_id
+  arm_ami_id                 = var.arm_ami_id
+  azs                        = var.azs
+  cluster                    = module.eks.cluster
+  karpenter_helm_version     = var.karpenter_helm_version
   node_pod_execution_profile = module.eks.node_pod_execution_profile
-  node_pod_execution_role = module.eks.node_pod_execution_role
-  oidc_provider = module.eks.oidc_provider
-  tags = {}
+  node_pod_execution_role    = module.eks.node_pod_execution_role
+  oidc_provider              = module.eks.oidc_provider
+  tags                       = {}
 }

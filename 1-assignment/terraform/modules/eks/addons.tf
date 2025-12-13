@@ -34,7 +34,7 @@ data "aws_iam_policy_document" "eks_vpc_cni_role" {
 }
 
 resource "aws_eks_addon" "eks_cluster_vpc_cni" {
-  depends_on = [aws_eks_node_group.bootstrap]
+  depends_on                  = [aws_eks_node_group.bootstrap]
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "vpc-cni"
   addon_version               = var.cni_version
@@ -56,7 +56,7 @@ resource "aws_eks_addon" "eks_cluster_vpc_cni" {
 }
 
 resource "aws_eks_addon" "eks-cluster-kube-proxy" {
-  depends_on = [aws_eks_node_group.bootstrap]
+  depends_on                  = [aws_eks_node_group.bootstrap]
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "kube-proxy"
   addon_version               = var.kube_proxy_version
@@ -66,7 +66,7 @@ resource "aws_eks_addon" "eks-cluster-kube-proxy" {
 }
 
 resource "aws_eks_addon" "coredns" {
-  depends_on = [aws_eks_node_group.bootstrap]
+  depends_on                  = [aws_eks_node_group.bootstrap]
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "coredns"
   addon_version               = var.coredns_addon_version

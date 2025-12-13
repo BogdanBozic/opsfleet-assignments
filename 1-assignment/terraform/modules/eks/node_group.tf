@@ -34,7 +34,7 @@ resource "aws_eks_node_group" "bootstrap" {
   ]
 
   lifecycle {
-    ignore_changes = [ launch_template[0].version ]
+    ignore_changes = [launch_template[0].version]
   }
 }
 

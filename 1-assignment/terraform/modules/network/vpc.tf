@@ -8,7 +8,7 @@ resource "aws_vpc" "this" {
     try(var.tags.common, {}),
     try(var.tags.vpc, {}),
     {
-      Name                                                   = "${var.project_name}-${var.env}"
+      Name = "${var.project_name}-${var.env}"
     }
   )
 }
@@ -30,8 +30,8 @@ resource "aws_subnet" "public" {
     try(var.tags.common, {}),
     try(var.tags.public_subnets, {}),
     {
-      Name                                                   = "${var.project_name}-${var.env}-public-${count.index}"
-      Accessibility                                          = "public"
+      Name          = "${var.project_name}-${var.env}-public-${count.index}"
+      Accessibility = "public"
     }
   )
 }
@@ -53,8 +53,8 @@ resource "aws_subnet" "private" {
     try(var.tags.common, {}),
     try(var.tags.private_subnets, {}),
     {
-      Name                                                   = "${var.project_name}-${var.env}-private-${count.index}"
-      Accessibility                                          = "private"
+      Name          = "${var.project_name}-${var.env}-private-${count.index}"
+      Accessibility = "private"
     }
   )
 }
