@@ -24,13 +24,41 @@ variable "azs" {
 }
 
 variable "eks_version" {
-  type = string
+  description = "The Kubernetes version to deploy in the EKS cluster, e.g., 1.28."
+  type        = string
 }
 
-variable "cni_version" {}
-variable "kube_proxy_version" {}
-variable "coredns_version" {}
-variable "nodes_ami_version" {}
-variable "amd_ami_id" {}
-variable "arm_ami_id" {}
-variable "karpenter_helm_version" {}
+variable "cni_version" {
+  description = "The version of the AWS VPC CNI plugin to deploy in the cluster for pod networking."
+  type        = string
+}
+
+variable "kube_proxy_version" {
+  description = "The version of kube-proxy to deploy in the cluster for service networking."
+  type        = string
+}
+
+variable "coredns_version" {
+  description = "The version of CoreDNS to deploy in the cluster for DNS resolution."
+  type        = string
+}
+
+variable "nodes_ami_version" {
+  description = "The EKS-optimized AMI version for the bootstrap node group."
+  type        = string
+}
+
+variable "amd_ami_id" {
+  description = "The AMI ID to use for x86_64 (AMD/Intel) Karpenter nodes."
+  type        = string
+}
+
+variable "arm_ami_id" {
+  description = "The AMI ID to use for ARM64 (Graviton) Karpenter nodes."
+  type        = string
+}
+
+variable "karpenter_helm_version" {
+  description = "The Helm chart version of Karpenter to deploy in the cluster."
+  type        = string
+}

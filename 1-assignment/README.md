@@ -29,6 +29,7 @@ Oh, and yes, I've used Terraform, not OpenTofu for the sake of simplicity.
 ### Actual setup
 
 I assume you're using a Linux or a Mac machine to test this, I have no idea how this would work on Windows.
+I've used Terraform ```v1.14.0``` here.
 
 ```cd terraform/envs/dev```
 

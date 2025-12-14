@@ -1,3 +1,9 @@
+locals {
+  tags = {
+    random = "a simple display of power"
+  }
+}
+
 module "network" {
   source = "../../modules/network"
 
@@ -8,6 +14,7 @@ module "network" {
   azs          = var.azs
 
   tags = {
+    common = local.tags
     vpc = {
       "kubernetes.io/cluster/${var.project_name}-${var.env}" = "shared"
     }
@@ -38,7 +45,7 @@ module "eks" {
   private_subnet_ids    = [for s in module.network.subnets.private : s.id]
   project_name          = var.project_name
   public_subnet_ids     = [for s in module.network.subnets.public : s.id]
-  tags                  = {}
+  tags                  = local.tags
 }
 
 module "crds" {
@@ -60,5 +67,5 @@ module "karpenter" {
   node_pod_execution_profile = module.eks.node_pod_execution_profile
   node_pod_execution_role    = module.eks.node_pod_execution_role
   oidc_provider              = module.eks.oidc_provider
-  tags                       = {}
+  tags                       = local.tags
 }
