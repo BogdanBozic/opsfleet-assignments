@@ -8,11 +8,6 @@ variable "project_name" {
   type        = string
 }
 
-variable "subnet_count" {
-  description = "Number of public and private subnets to create in the VPC. Each type will have this many subnets."
-  type        = number
-}
-
 variable "vpc_cidr" {
   description = "The CIDR block for the VPC, e.g., 10.0.0.0/16."
   type        = string
